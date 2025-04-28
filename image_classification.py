@@ -31,12 +31,53 @@ image_path = []
 labels = []
 
 for i in os.listdir("/content/animal-faces/afhq"):
-  print(i)
+
   for label in os.listdir(f"/content/animal-faces/afhq/{i}"):
-    print(label)
+
     for image in os.listdir(f"/content/animal-faces/afhq/{i}/{label}"):
-      print(image)
-      break
-    break
-  break
+      image_path.append(f"/content/animal-faces/afhq/{i}/{label}/{image}")
+      labels.append(label)
+
+data_df = pd.DataFrame(zip(image_path, labels), columns = ["image_path", "labels"])
+print(data_df["labels"].unique())
+data_df.head()
+
+train = data_df.sample(frac = 0.7)
+test = data_df.drop(train.index)
+
+val = test.sample(frac = 0.5)
+test = test.drop(val.index)
+
+print(train.shape)
+print(val.shape)
+print(test.shape)
+
+label_encoder = LabelEncoder()
+label_encoder.fit(data_df["labels"])
+
+transform = transforms.Compose([
+    transforms.Resize((128,128)),
+    transforms.ToTensor(),
+    transforms.ConvertImageDtype(torch.float)
+])
+
+class CustomImageDataset(Dataset):
+  def __init__(self, dataframe, transform = None):
+    self.dataframe = dataframe
+    self.transform = transform
+    self.labels = torch.tensor(label_encoder.transform(dataframe['labels'])).to(device)
+
+  def __len__(self):
+    return self.dataframe.shape[0]
+
+  def __getitem__(self, idx):
+    img_path = self.dataframe.iloc[idx, 0]
+    label = self.labels[idx]
+
+    image = Image.open(img_path).convert('RGB')
+
+    if self.transform:
+      image = self.transform(image).to(device)
+
+    return image, label
 
