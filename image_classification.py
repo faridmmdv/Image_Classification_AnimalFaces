@@ -42,7 +42,7 @@ data_df = pd.DataFrame(zip(image_path, labels), columns = ["image_path", "labels
 print(data_df["labels"].unique())
 data_df.head()
 
-train = data_df.sample(frac = 0.7)
+train = data_df.sample(frac = 0.8)
 test = data_df.drop(train.index)
 
 val = test.sample(frac = 0.5)
